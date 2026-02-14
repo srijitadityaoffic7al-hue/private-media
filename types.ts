@@ -1,5 +1,6 @@
 
-export type MessageStatus = 'sent' | 'delivered' | 'seen';
+export type MessageStatus = 'sent' | 'delivered' | 'seen' | 'failed';
+export type P2PStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 export interface User {
   id: string;
@@ -7,8 +8,8 @@ export interface User {
   avatar: string;
   status: 'online' | 'offline' | 'away';
   isVerified?: boolean;
-  following: string[]; // User IDs
-  followers: string[]; // User IDs
+  following: string[];
+  followers: string[];
 }
 
 export interface Attachment {
@@ -37,19 +38,20 @@ export interface Post {
   authorId: string;
   content: string;
   timestamp: number;
-  likes: string[]; // User IDs
+  likes: string[];
   replies: Post[];
-  reposts: string[]; // User IDs
+  reposts: string[];
   attachments?: Attachment[];
 }
 
 export interface Chat {
   id: string;
-  participants: string[]; // User IDs
+  participants: string[];
   lastMessage?: Message;
   isGroup: boolean;
   groupName?: string;
   groupAvatar?: string;
+  p2pStatus?: P2PStatus;
 }
 
 export interface AppState {
@@ -57,7 +59,7 @@ export interface AppState {
   users: User[];
   chats: Chat[];
   posts: Post[];
-  messages: Record<string, Message[]>; // chatId: messages[]
+  messages: Record<string, Message[]>;
   activeChatId: string | null;
-  view: 'feed' | 'messages' | 'profile' | 'chat_room';
+  view: 'feed' | 'messages' | 'profile' | 'chat_room' | 'search';
 }

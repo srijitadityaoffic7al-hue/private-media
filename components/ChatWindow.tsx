@@ -15,7 +15,7 @@ const MessageBubble: React.FC<{ message: Message; isMe: boolean }> = ({ message,
           <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
-          {isMe && <span className="opacity-40">{ICONS.Sent}</span>}
+          {isMe && <span className={`opacity-40 transition-colors ${message.status === 'sent' ? 'text-blue-500' : ''}`}>{ICONS.Sent}</span>}
         </div>
       </div>
     </div>
@@ -30,6 +30,8 @@ const ChatWindow: React.FC = () => {
   const activeChat = chats.find(c => c.id === activeChatId);
   const partner = users.find(u => activeChat?.participants.includes(u.id) && u.id !== currentUser?.id);
   const currentMessages = activeChatId ? messages[activeChatId] || [] : [];
+  
+  const p2pStatus = activeChat?.p2pStatus || 'disconnected';
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => scrollToBottom(), [currentMessages]);
@@ -45,7 +47,7 @@ const ChatWindow: React.FC = () => {
   if (!activeChat) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 opacity-20">
-        {ICONS.MessageTab}
+        <div className="animate-pulse">{ICONS.MessageTab}</div>
         <p className="text-[10px] font-black uppercase tracking-[0.5em] mt-4">Select Communication Node</p>
       </div>
     );
@@ -61,10 +63,22 @@ const ChatWindow: React.FC = () => {
           >
             {ICONS.Back}
           </button>
-          <img src={partner?.avatar} className="w-10 h-10 rounded-full border border-slate-800" alt="avatar" />
+          <div className="relative">
+            <img src={partner?.avatar} className={`w-10 h-10 rounded-full border border-slate-800 transition-all ${p2pStatus === 'connected' ? 'ring-2 ring-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : ''}`} alt="avatar" />
+            {p2pStatus === 'connected' && (
+               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-600 rounded-full border-2 border-slate-950 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+               </div>
+            )}
+          </div>
           <div className="flex flex-col">
             <h3 className="font-black text-white text-sm tracking-tight leading-none mb-1">{partner?.username}</h3>
-            <span className="text-[9px] text-blue-500 font-black uppercase tracking-widest animate-pulse">Live Encryption</span>
+            <span className={`text-[9px] font-black uppercase tracking-widest ${
+              p2pStatus === 'connected' ? 'text-green-500' : 
+              p2pStatus === 'connecting' ? 'text-yellow-500' : 'text-slate-500'
+            }`}>
+              {p2pStatus === 'connected' ? 'P2P Secure' : p2pStatus === 'connecting' ? 'Dialing...' : 'Encrypted Link'}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -74,6 +88,13 @@ const ChatWindow: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto pt-10 pb-6 custom-scrollbar">
+        {currentMessages.length === 0 && (
+           <div className="flex flex-col items-center justify-center p-12 text-center opacity-30 grayscale">
+              <div className="p-4 bg-slate-900 rounded-full mb-4">{ICONS.Lock}</div>
+              <p className="text-[10px] font-black uppercase tracking-widest">Channel Initialized</p>
+              <p className="text-[9px] mt-2 max-w-xs leading-relaxed uppercase">End-to-end encryption active. No logs are stored on Zylos servers.</p>
+           </div>
+        )}
         {currentMessages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} isMe={msg.senderId === currentUser?.id} />
         ))}
@@ -94,7 +115,7 @@ const ChatWindow: React.FC = () => {
           <button 
             type="submit" 
             disabled={!inputText.trim()}
-            className={`p-2 rounded-xl transition-all ${inputText.trim() ? 'bg-white text-black' : 'text-slate-700'}`}
+            className={`p-2 rounded-xl transition-all ${inputText.trim() ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-slate-700'}`}
           >
             {ICONS.Send}
           </button>
