@@ -14,12 +14,21 @@ interface ChatContextType extends AppState {
   followUser: (userId: string) => void;
   createChat: (userIds: string[]) => string;
   markViewOnceAsSeen: (messageId: string, attachmentId: string) => void;
+  isLoading: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
-const channel = new BroadcastChannel('zylos_social_v3');
+
+/**
+ * NOTE FOR PRODUCTION:
+ * To enable real-time sync between different phones, 
+ * replace the localStorage/BroadcastChannel logic below with 
+ * a Supabase or Firebase listener.
+ */
+const channel = new BroadcastChannel('zylos_global_sync');
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('zylos_user_v3');
     return saved ? JSON.parse(saved) : null;
@@ -28,33 +37,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [view, setView] = useState<'feed' | 'messages' | 'profile' | 'chat_room'>('feed');
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  
   const [chats, setChats] = useState<Chat[]>(() => {
     const saved = localStorage.getItem('zylos_chats_v3');
     return saved ? JSON.parse(saved) : [];
   });
+
   const [posts, setPosts] = useState<Post[]>(() => {
     const saved = localStorage.getItem('zylos_posts_v3');
-    return saved ? JSON.parse(saved) : [
-      { id: 'p1', authorId: '2', content: 'Shadow network is expanding. Who else is in?', timestamp: Date.now() - 3600000, likes: [], replies: [], reposts: [] },
-      { id: 'p2', authorId: '3', content: 'Encryption protocols updated to V3. Stay safe ghosts.', timestamp: Date.now() - 7200000, likes: [], replies: [], reposts: [] }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
+
   const [messages, setMessages] = useState<Record<string, Message[]>>(() => {
     const saved = localStorage.getItem('zylos_messages_v3');
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Persistance
+  // Persistance & Global Sync Simulation
   useEffect(() => {
     localStorage.setItem('zylos_chats_v3', JSON.stringify(chats));
     localStorage.setItem('zylos_posts_v3', JSON.stringify(posts));
     localStorage.setItem('zylos_messages_v3', JSON.stringify(messages));
+    
+    // Simulate Edge Network Latency
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
   }, [chats, posts, messages]);
 
   useEffect(() => {
     const handleSync = (event: MessageEvent) => {
       const { type, payload } = event.data;
-      if (type === 'NEW_POST') setPosts(prev => [payload, ...prev]);
+      if (type === 'SYNC_POSTS') setPosts(payload);
       if (type === 'NEW_MESSAGE') {
         const { chatId, message } = payload;
         setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), message] }));
@@ -80,12 +93,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('zylos_user_v3');
+    setView('feed');
   };
 
   const createPost = (content: string, attachments: any[] = []) => {
     if (!currentUser) return;
     const newPost: Post = {
-      id: Date.now().toString(),
+      id: `post_${Date.now()}`,
       authorId: currentUser.id,
       content,
       timestamp: Date.now(),
@@ -93,13 +107,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       replies: [],
       reposts: []
     };
-    setPosts(prev => [newPost, ...prev]);
-    channel.postMessage({ type: 'NEW_POST', payload: newPost });
+    const updatedPosts = [newPost, ...posts];
+    setPosts(updatedPosts);
+    channel.postMessage({ type: 'SYNC_POSTS', payload: updatedPosts });
   };
 
   const likePost = (postId: string) => {
     if (!currentUser) return;
-    setPosts(prev => prev.map(p => {
+    const updated = posts.map(p => {
       if (p.id === postId) {
         const isLiked = p.likes.includes(currentUser.id);
         return {
@@ -108,7 +123,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
       return p;
-    }));
+    });
+    setPosts(updated);
+    channel.postMessage({ type: 'SYNC_POSTS', payload: updated });
   };
 
   const followUser = (userId: string) => {
@@ -128,7 +145,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendMessage = (content: string, attachments: any[] = []) => {
     if (!currentUser || !activeChatId) return;
     const newMessage: Message = {
-      id: Date.now().toString(),
+      id: `msg_${Date.now()}`,
       senderId: currentUser.id,
       content,
       timestamp: Date.now(),
@@ -143,7 +160,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const existing = chats.find(c => !c.isGroup && c.participants.includes(userIds[0]) && c.participants.includes(currentUser?.id || ''));
     if (existing) return existing.id;
 
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = `chat_${Math.random().toString(36).substr(2, 9)}`;
     const newChat: Chat = { id, participants: [currentUser?.id || '', ...userIds], isGroup: false };
     setChats(prev => [newChat, ...prev]);
     return id;
@@ -164,7 +181,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <ChatContext.Provider value={{
-      currentUser, users, chats, posts, messages, activeChatId, view,
+      currentUser, users, chats, posts, messages, activeChatId, view, isLoading,
       login, logout, setView, setActiveChat: setActiveChatId,
       sendMessage, createPost, likePost, followUser, createChat, markViewOnceAsSeen
     }}>
