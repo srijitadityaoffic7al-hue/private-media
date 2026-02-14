@@ -1,0 +1,72 @@
+
+import React from 'react';
+import { 
+  Shield, 
+  Lock, 
+  MessageSquare, 
+  Users, 
+  Image as ImageIcon, 
+  Mic, 
+  Video, 
+  Trash2, 
+  Forward, 
+  Reply, 
+  MoreVertical, 
+  Check, 
+  CheckCheck,
+  Search,
+  Settings,
+  X,
+  Plus,
+  ArrowLeft,
+  Smile,
+  Send,
+  Eye,
+  Camera,
+  FileText,
+  Home,
+  Heart,
+  Repeat,
+  User,
+  MessageCircle
+} from 'lucide-react';
+
+export const ICONS = {
+  Shield: <Shield size={18} />,
+  Lock: <Lock size={18} />,
+  Message: <MessageSquare size={20} />,
+  Users: <Users size={20} />,
+  Image: <ImageIcon size={20} />,
+  Mic: <Mic size={20} />,
+  Video: <Video size={20} />,
+  Trash: <Trash2 size={18} />,
+  Forward: <Forward size={18} />,
+  Reply: <Reply size={18} />,
+  More: <MoreVertical size={20} />,
+  Sent: <Check size={16} />,
+  Delivered: <CheckCheck size={16} className="text-slate-400" />,
+  Seen: <CheckCheck size={16} className="text-blue-500" />,
+  Search: <Search size={20} />,
+  Settings: <Settings size={20} />,
+  Close: <X size={20} />,
+  Plus: <Plus size={20} />,
+  Back: <ArrowLeft size={20} />,
+  Emoji: <Smile size={20} />,
+  Send: <Send size={20} />,
+  ViewOnce: <Eye size={18} />,
+  Camera: <Camera size={20} />,
+  File: <FileText size={20} />,
+  Home: <Home size={24} />,
+  Heart: <Heart size={20} />,
+  Repeat: <Repeat size={20} />,
+  User: <User size={24} />,
+  MessageTab: <MessageSquare size={24} />,
+  Comment: <MessageCircle size={20} />
+};
+
+export const MOCK_USERS: any[] = [
+  { id: '1', username: 'shadow_stalker', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=shadow', status: 'online', following: [], followers: [] },
+  { id: '2', username: 'neon_rider', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=neon', status: 'away', following: [], followers: [] },
+  { id: '3', username: 'cipher_queen', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=cipher', status: 'offline', following: [], followers: [] },
+  { id: '4', username: 'ghost_protocol', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ghost', status: 'online', following: [], followers: [] }
+];

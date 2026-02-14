@@ -1,0 +1,8 @@
+{
+  "name": "Zylos Shadow Messenger",
+  "description": "A high-security, username-only messaging platform featuring real-time communication, media sharing, and end-to-end encryption simulation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
